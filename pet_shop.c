@@ -54,12 +54,27 @@ void save_data() {
 }
 
 void input_date(struct tm *date) {
+    char input[20];
     int day, month, year;
-    printf("Enter date added (yyyy mm dd): ");
-    scanf("%d %d %d", &year, &month, &day);
-    date->tm_year = year - 1900;
-    date->tm_mon = month - 1;
-    date->tm_mday = day;
+
+    printf("Enter date added (yyyy mm dd) or press Enter to use current date: ");
+    // fgets will get the entire line including whitespace
+    getchar(); // Consume the leftover newline character
+    fgets(input, sizeof(input), stdin);
+
+    if (sscanf(input, "%d %d %d", &year, &month, &day) == 3){
+      date->tm_year = year - 1900;
+      date->tm_mon = month - 1;
+      date->tm_mday = day;
+    } else {
+      // Get current date if no valid date is entered
+      time_t now = time(NULL);
+      *date = *localtime(&now);
+
+      date->tm_hour = 0;
+      date->tm_min = 0;
+      date->tm_sec = 0;
+    }
 }
 
 void add_pet() {
