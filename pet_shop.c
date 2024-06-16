@@ -173,6 +173,7 @@ void remove_pet() {
 
     if (cageIndex < 0 || cageIndex >= NUM_CAGES) {
         printf("Invalid cage number.\n");
+        getchar();
         return;
     }
 
@@ -180,6 +181,7 @@ void remove_pet() {
 
     if (cage->petCount == 0) {
         printf("No pets to remove in this cage.\n");
+        getchar();
         return;
     }
 
@@ -192,12 +194,14 @@ void remove_pet() {
     }
 
     int petIndex;
+    getchar();
     printf("Enter the number of the pet to remove : ");
     scanf("%d", &petIndex);
     petIndex--; // Convert to 0-based index
 
     if (petIndex < 0 || petIndex >= cage->petCount) {
         printf("Invalid number.\n");
+        getchar();
         return;
     }
 
@@ -206,6 +210,7 @@ void remove_pet() {
     }
     cage->petCount--;
     printf("Pet removed successfully from %s!\n", cage->cageName);
+    getchar();
     save_data();
 }
 
@@ -226,6 +231,7 @@ void menu() {
         // Attempt to convert the input to an integer
         if (sscanf(input, "%d", &choice) != 1) {
           printf("Invalid input, please try again.\n");
+          getchar();
           continue;
         }
 
