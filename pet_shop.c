@@ -2,10 +2,10 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_PETS_PER_STORAGE 10
+#define NUM_CAGES 10
+#define MAX_PETS_PER_CAGE 5
 #define NAME_LENGTH 50
 #define SPECIES_LENGTH 50
-#define NUM_STORAGES 10
 #define DATA_FILE "pets_data.txt"
 
 typedef struct {
@@ -16,28 +16,30 @@ typedef struct {
 } Pet;
 
 typedef struct {
-    char storageName[NAME_LENGTH];
-    Pet pets[MAX_PETS_PER_STORAGE];
+    char cageName[NAME_LENGTH];
+    Pet pets[MAX_PETS_PER_CAGE];
     int petCount;
-} Storage;
+} Cage;
 
-Storage storages[NUM_STORAGES];
+Cage cages[NUM_CAGES];
 
-void initialize_storages() {
-    for (int i = 0; i < NUM_STORAGES; i++) {
-        sprintf(storages[i].storageName, "Storage %d", i + 1);
-        storages[i].petCount = 0;
+void initialize_cages() {
+    for (int i = 0; i < NUM_CAGES; i++) {
+        sprintf(cages[i].cageName, "Cage %d", i + 1);
+        cages[i].petCount = 0;
     }
 }
 
 void load_data() {
     FILE *file = fopen(DATA_FILE, "r");
     if (file == NULL) {
-        printf("No previous data found. Starting with empty storages.\n");
+        printf("No previous data found. Starting with empty cages.\n");
         return;
     }
 
-    fread(&storages, sizeof(Storage), NUM_STORAGES, file);
+    if (fread(&cages, sizeof(Cage), NUM_CAGES, file) != NUM_CAGES) {
+        printf("Error reading data. Starting with empty cages.\n");
+    }
     fclose(file);
 }
 
@@ -48,7 +50,8 @@ void save_data() {
         return;
     }
 
-    fwrite(&storages, sizeof(Storage), NUM_STORAGES, file);
+    fwrite(&cages, sizeof(Cage), NUM_CAGES, file);
+    fflush(file); // Ensure data is written to disk
     fclose(file);
     printf("Data saved successfully.\n");
 }
@@ -57,7 +60,7 @@ void input_date(struct tm *date) {
     char input[20];
     int day, month, year;
 
-    printf("Enter date added (yyyy mm dd) or press Enter to use current date: ");
+    printf("Enter date added (yyyy mm dd) or press Enter to use current date : ");
     // fgets will get the entire line including whitespace
     getchar(); // Consume the leftover newline character
     fgets(input, sizeof(input), stdin);
@@ -78,34 +81,42 @@ void input_date(struct tm *date) {
 }
 
 void add_pet() {
-    int storageIndex;
-    printf("Enter storage number (1-%d): ", NUM_STORAGES);
-    scanf("%d", &storageIndex);
-    storageIndex--; // Convert to 0-based index
+    int cageIndex;
+    printf("Enter cage number (1-%d) : ", NUM_CAGES);
+    scanf("%d", &cageIndex);
+    cageIndex--; // Convert to 0-based index
 
-    if (storageIndex < 0 || storageIndex >= NUM_STORAGES) {
-        printf("Invalid storage number.\n");
+    if (cageIndex < 0 || cageIndex >= NUM_CAGES) {
+        printf("Invalid cage number.\n");
         return;
     }
 
-    Storage *storage = &storages[storageIndex];
+    Cage *cage = &cages[cageIndex];
 
-    if (storage->petCount >= MAX_PETS_PER_STORAGE) {
-        printf("This storage is full. Cannot add more pets.\n");
+    if (cage->petCount >= MAX_PETS_PER_CAGE) {
+        printf("This cage is full. Cannot add more pets.\n");
         return;
     }
 
     Pet newPet;
-    printf("Enter pet name: ");
-    scanf("%s", newPet.name);
-    printf("Enter pet species: ");
-    scanf("%s", newPet.species);
-    printf("Enter pet age: ");
+    getchar(); // Consume leftover newline character
+
+    printf("Enter pet name : ");
+    fgets(newPet.name, NAME_LENGTH, stdin);
+    newPet.name[strcspn(newPet.name, "\n")] = '\0'; // Remove trailing newline character
+
+    printf("Enter pet species : ");
+    fgets(newPet.species, SPECIES_LENGTH, stdin);
+    newPet.species[strcspn(newPet.species, "\n")] = '\0';
+
+    printf("Enter pet age (year) : ");
     scanf("%d", &newPet.age);
+
     input_date(&newPet.dateAdded);
 
-    storage->pets[storage->petCount++] = newPet;
-    printf("Pet added successfully to %s!\n", storage->storageName);
+    cage->pets[cage->petCount++] = newPet;
+    printf("Pet added successfully to %s!\n", cage->cageName);
+    save_data();
 }
 
 void print_line(int length) {
@@ -120,26 +131,27 @@ void print_date(struct tm date) {
 }
 
 void view_pets() {
-    const int storageNameWidth = 15;
+    const int cageNameWidth = 15;
     const int nameWidth = 20;
     const int speciesWidth = 20;
     const int ageWidth = 10;
     const int dateWidth = 15;
-    const int totalWidth = storageNameWidth + nameWidth + speciesWidth + ageWidth + dateWidth + 6;
+    const int totalWidth = cageNameWidth + nameWidth + speciesWidth + ageWidth + dateWidth + 8;
 
     // Print table header
     print_line(totalWidth);
-    printf("| %-13s | %-18s | %-18s | %-8s | %-13s |\n", "Storage", "Name", "Species", "Age", "Date Added");
+    printf("| %-13s | %-18s | %-18s | %-10s | %-13s |\n", "Cage", "Name", "Species", "Age (year)", "Date Added");
     print_line(totalWidth);
 
     int petsFound = 0;
 
-    for (int i = 0; i < NUM_STORAGES; i++) {
-        Storage *storage = &storages[i];
+    // Search pet's data in every cages
+    for (int i = 0; i < NUM_CAGES; i++) {
+        Cage *cage = &cages[i];
 
-        for (int j = 0; j < storage->petCount; j++) {
-            Pet *pet = &storage->pets[j];
-            printf("| %-13s | %-18s | %-18s | %-8d | ", storage->storageName, pet->name, pet->species, pet->age);
+        for (int j = 0; j < cage->petCount; j++) {
+            Pet *pet = &cage->pets[j];
+            printf("| %-13s | %-18s | %-18s | %-10d | ", cage->cageName, pet->name, pet->species, pet->age);
             print_date(pet->dateAdded);
             printf("    |\n");
             petsFound = 1;
@@ -147,66 +159,75 @@ void view_pets() {
     }
 
     if (!petsFound) {
-        printf("| %-13s | %-18s | %-18s | %-8s | %-13s |\n", "No pets", "No pets", "No pets", "No pets", "No pets");
+        printf("| %-13s | %-18s | %-18s | %-10s | %-13s |\n", "No pets", "No pets", "No pets", "No pets", "No pets");
     }
 
     print_line(totalWidth);
 }
 
-void delete_pet() {
-    int storageIndex;
-    printf("Enter storage number (1-%d): ", NUM_STORAGES);
-    scanf("%d", &storageIndex);
-    storageIndex--; // Convert to 0-based index
+void remove_pet() {
+    int cageIndex;
+    printf("Enter cage number (1-%d) : ", NUM_CAGES);
+    scanf("%d", &cageIndex);
+    cageIndex--; // Convert to 0-based index
 
-    if (storageIndex < 0 || storageIndex >= NUM_STORAGES) {
-        printf("Invalid storage number.\n");
+    if (cageIndex < 0 || cageIndex >= NUM_CAGES) {
+        printf("Invalid cage number.\n");
         return;
     }
 
-    Storage *storage = &storages[storageIndex];
+    Cage *cage = &cages[cageIndex];
 
-    if (storage->petCount == 0) {
-        printf("No pets to delete in this storage.\n");
+    if (cage->petCount == 0) {
+        printf("No pets to remove in this cage.\n");
         return;
     }
 
-    printf("\n%s:\n", storage->storageName);
-    for (int j = 0; j < storage->petCount; j++) {
-        Pet *pet = &storage->pets[j];
-        printf("%d. Name: %s, Species: %s, Age: %d, Date Added: ", j + 1, pet->name, pet->species, pet->age);
+    printf("\n%s:\n", cage->cageName);
+    for (int j = 0; j < cage->petCount; j++) {
+        Pet *pet = &cage->pets[j];
+        printf("%d. Name : %s, Species : %s, Age (year): %d, Date Added : ", j + 1, pet->name, pet->species, pet->age);
         print_date(pet->dateAdded);
         printf("\n");
     }
 
     int petIndex;
-    printf("Enter the number of the pet to delete: ");
+    printf("Enter the number of the pet to remove : ");
     scanf("%d", &petIndex);
     petIndex--; // Convert to 0-based index
 
-    if (petIndex < 0 || petIndex >= storage->petCount) {
+    if (petIndex < 0 || petIndex >= cage->petCount) {
         printf("Invalid number.\n");
         return;
     }
 
-    for (int i = petIndex; i < storage->petCount - 1; i++) {
-        storage->pets[i] = storage->pets[i + 1];
+    for (int i = petIndex; i < cage->petCount - 1; i++) {
+        cage->pets[i] = cage->pets[i + 1];
     }
-    storage->petCount--;
-    printf("Pet deleted successfully from %s!\n", storage->storageName);
+    cage->petCount--;
+    printf("Pet removed successfully from %s!\n", cage->cageName);
+    save_data();
 }
 
 void menu() {
+    char input[10];
     int choice;
     while (1) {
         printf("\nPet Shop Management\n");
         printf("1. Add Pet\n");
         printf("2. View Pets\n");
-        printf("3. Delete Pet\n");
-        printf("4. Save Data\n");
-        printf("5. Exit\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
+        printf("3. Remove Pet\n");
+        printf("4. Exit\n");
+        printf("Enter your choice : ");
+
+        // Read input as a string
+        fgets(input, sizeof(input), stdin);
+
+        // Attempt to convert the input to an integer
+        if (sscanf(input, "%d", &choice) != 1) {
+          printf("Invalid input, please try again.\n");
+          continue;
+        }
 
         switch (choice) {
             case 1:
@@ -216,23 +237,20 @@ void menu() {
                 view_pets();
                 break;
             case 3:
-                delete_pet();
+                remove_pet();
                 break;
             case 4:
-                save_data();
-                break;
-            case 5:
                 save_data();
                 printf("Exiting the program.\n");
                 return;
             default:
-                printf("Invalid choice. Please try again.\n");
+                printf("Invalid input, please try again.\n");
         }
     }
 }
 
 int main() {
-    initialize_storages();
+    initialize_cages();
     load_data();
     menu();
     return 0;
