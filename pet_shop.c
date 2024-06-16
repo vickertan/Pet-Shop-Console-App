@@ -95,6 +95,7 @@ void add_pet() {
 
     if (cage->petCount >= MAX_PETS_PER_CAGE) {
         printf("This cage is full. Cannot add more pets.\n");
+        getchar();
         return;
     }
 
