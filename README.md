@@ -2,9 +2,10 @@
 
   資料結構期末報告
 
-  - Contributors
-    1. 張清清 (W1114171002)
-    2. 陳偉殿 (W1114171003)
+  Contributors
+
+  1. 張清清 (W1114171002)
+  2. 陳偉殿 (W1114171003)
 
 # Description
 
@@ -15,12 +16,13 @@
 # How to use
 
   - For Windows
-    1. Clone this repository or download the pet_shop.exe file into your local computer.
-    2. Run the pet_shop.exe file.
+    - Clone this repository or download the pet_shop.exe file into your local computer.
+    - Run the pet_shop.exe file.
       - If you see a warning message, click "More info" and then click "Run anyway".
       - Or you can run the program in your termimal by typing `.\pet_shop.exe`.
 
-  - Modify
+  - To modify
+
     You can always customize the program according to your needs by modifying the source code in pet_shop.c, then you can use gcc compiler to recompile the program using the following command:
     ```
     gcc pet_shop.c -o pet_shop
